@@ -1,4 +1,7 @@
-import { Navigate } from 'react-router-dom';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
@@ -7,18 +10,27 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
+  const router = useRouter();
 
-  // If not logged in, redirect to login
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  useEffect(() => {
+    if (!ready) return;
+    if (!user) {
+      router.replace('/login');
+      return;
+    }
+    if (requireAdmin && user.role !== 'admin') {
+      router.replace('/dashboard');
+    }
+  }, [user, ready, requireAdmin, router]);
+
+  if (!ready || !user) {
+    return null;
   }
 
-  // If admin required but user is not admin, redirect to dashboard
   if (requireAdmin && user.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
+    return null;
   }
 
   return <>{children}</>;
 }
-

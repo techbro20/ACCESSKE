@@ -1,3 +1,5 @@
+'use client';
+
 import { request } from '../utils/request';
 import { BYPASS_AUTH } from './auth';
 import { findMockAccountById, upsertMockAccount } from './mockAccounts';

@@ -7,8 +7,8 @@ import {
 } from './mockAccounts';
 
 // TEMPORARY: Bypass real API auth while backend/DB is not connected.
-// Set REACT_APP_BYPASS_AUTH=false to use the real API once it is ready.
-export const BYPASS_AUTH = process.env.REACT_APP_BYPASS_AUTH !== 'false';
+// Set NEXT_PUBLIC_BYPASS_AUTH=false to use the real API once it is ready.
+export const BYPASS_AUTH = process.env.NEXT_PUBLIC_BYPASS_AUTH !== 'false';
 
 export async function loginAPI(email: string, password: string) {
   if (BYPASS_AUTH) {
