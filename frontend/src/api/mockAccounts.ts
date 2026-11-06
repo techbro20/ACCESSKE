@@ -1,3 +1,5 @@
+'use client';
+
 export type MockRole = 'admin' | 'alumni';
 
 export interface MockAccount {

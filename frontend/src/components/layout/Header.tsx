@@ -1,19 +1,22 @@
-import { Link, useNavigate } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function Header() {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   function handleLogout() {
     logout();
-    navigate('/');
+    router.push('/');
   }
 
   return (
     <header className="bg-acces-black text-acces-beige px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
       <Link
-        to="/"
+        href="/"
         className="flex items-center gap-3 text-acces-beige no-underline font-bold hover:opacity-80 transition-opacity"
       >
         <img
@@ -28,21 +31,21 @@ export default function Header() {
           <>
             <Link 
               className="text-acces-beige no-underline hover:text-acces-red transition-colors text-sm sm:text-base font-medium" 
-              to="/dashboard"
+              href="/dashboard"
             >
               Alumni Dashboard
             </Link>
             {user.role === 'admin' && (
               <Link 
                 className="text-acces-beige no-underline hover:text-acces-red transition-colors text-sm sm:text-base font-medium" 
-                to="/admin"
+                href="/admin"
               >
                 Admin Dashboard
               </Link>
             )}
             <Link 
               className="text-acces-beige no-underline hover:text-acces-red transition-colors text-sm sm:text-base" 
-              to="/profile"
+              href="/profile"
             >
               Profile
             </Link>
@@ -57,13 +60,13 @@ export default function Header() {
           <>
             <Link 
               className="text-acces-beige no-underline hover:text-acces-red transition-colors text-sm sm:text-base" 
-              to="/"
+              href="/"
             >
               Home
             </Link>
             <Link 
               className="text-acces-beige no-underline hover:text-acces-red transition-colors text-sm sm:text-base" 
-              to="/login"
+              href="/login"
             >
               Login
             </Link>

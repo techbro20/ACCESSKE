@@ -1,3 +1,5 @@
+'use client';
+
 import { colors } from '../../theme/colors';
 
 interface Props {

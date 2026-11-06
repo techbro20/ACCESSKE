@@ -1,111 +1,138 @@
 # ACCESSKE
 
-Unified project containing **backend (FastAPI + Alembic + PostgreSQL)** and **frontend (React)** under one repository.
+Unified project containing **backend (FastAPI + Alembic + PostgreSQL + Socket.IO + Redis)** and **frontend (Next.js App Router)** under one repository.
+
+---
+
+## Architecture
+
+| Layer | Stack | Hosting |
+| --- | --- | --- |
+| UI | Next.js (App Router, TypeScript, Tailwind) | Vercel or any Node host (or reverse-proxied) |
+| API + realtime chat | FastAPI + `python-socketio` + Redis | VPS |
+| Database | PostgreSQL + Alembic | VPS |
+
+The Next.js app is UI-only. The browser calls the VPS for REST (`NEXT_PUBLIC_API_URL`) and Socket.IO (`NEXT_PUBLIC_WS_URL`). Chat does **not** run inside the Next.js process.
+
+```
+Browser ──REST/WS──► FastAPI + Socket.IO + Redis (VPS)
+   │
+   └── renders Next.js UI (separate host)
+```
 
 ---
 
 ## Project Structure
-ACCESSKE/
-├── backend/
-│ ├── app/
-│ ├── alembic/
-│ ├── alembic.ini
-│ ├── requirements.txt
-│ └── .gitignore
-├── frontend/
-│ ├── src/
-│ ├── public/
-│ └── .gitignore
-└── .gitignore (parent)
 
+```
+ACCESSKE/
+├── backend/          # FastAPI, Alembic, Socket.IO
+├── frontend/         # Next.js App Router
+└── README.md
+```
 
 ---
 
 ## Backend Setup
 
-### Create Virtual Environment
+```bash
 cd backend
 python -m venv .venv
-.venv\Scripts\activate
+# Windows: .venv\Scripts\activate
+# Unix:    source .venv/bin/activate
 pip install -r requirements.txt
+```
 
-### Environment Variables  
-Create:
-backend/.env
+Create `backend/.env`:
 
-Add:
+```
 DATABASE_URL=<your_database_url>
 SECRET_KEY=<secret>
+```
 
-### Run Backend
+Run API (includes Socket.IO):
+
+```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
 
-### Database Migrations
+Migrations:
+
+```bash
 alembic revision --autogenerate -m "message"
 alembic upgrade head
+```
+
+CORS on FastAPI must allow your Next.js origin (local `http://localhost:3000` and your production frontend domain).
 
 ---
 
-## Frontend Setup
+## Frontend Setup (Next.js)
 
-### Install Dependencies
+```bash
 cd frontend
 npm install
+```
 
-### Environment Variables  
-Create:
-frontend/.env
+Create `frontend/.env.local` (see `.env.example`):
 
-Add:
-REACT_APP_BYPASS_AUTH=false
-REACT_APP_API_URL=http://localhost:8000
-REACT_APP_WS_URL=ws://localhost:8000
+```
+NEXT_PUBLIC_BYPASS_AUTH=false
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_WS_URL=ws://localhost:8000
+```
 
-### Run Frontend
-npm start
+Production (point at the VPS):
 
-### Build for Production
+```
+NEXT_PUBLIC_API_URL=https://api.example.com
+NEXT_PUBLIC_WS_URL=wss://api.example.com
+```
+
+Run:
+
+```bash
+npm run dev      # http://localhost:3000
 npm run build
-
-Build output appears in:
-frontend/build/
+npm start
+```
 
 ---
 
-## Production Deployment (Bundled)
+## Production Deployment (split)
 
-1. Build the frontend:
-cd frontend
-npm run build
+1. **VPS** — run FastAPI + Socket.IO + Redis + PostgreSQL. Serve HTTPS/WSS (e.g. Nginx).
+2. **Next.js** — deploy `frontend/` to Vercel (or another host). Set `NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_WS_URL` to the VPS origins.
+3. Do **not** copy a CRA `build/` into `backend/app/static` anymore; the UI is hosted separately.
 
-2. Copy the build output into backend static directories:
-backend/app/static/
-backend/app/templates/
+Optional: reverse-proxy both under one domain (`/` → Next, `/api` + Socket.IO → FastAPI). Env URLs should still match what the browser uses.
 
-3. Start backend:
-uvicorn app.main:app
+---
 
-Backend will now serve the frontend automatically.
+## Routes (frontend)
+
+| Path | Access |
+| --- | --- |
+| `/` | Landing |
+| `/login`, `/register` | Public |
+| `/dashboard`, `/profile`, `/chat`, `/notices`, `/events` | Authenticated |
+| `/admin`, `/admin/*`, `/invite` | Admin |
+
+Realtime chat uses the same Socket.IO events as before: `message`, `message_updated`, `message_deleted`, `messages_cleared`.
 
 ---
 
 ## Requirements Freeze (Backend)
+
+```bash
 cd backend
 pip freeze > requirements.txt
+```
 
 ---
 
-## Git Structure Notes
+## Git Notes
 
-- **Parent `.gitignore`** prevents global junk files from being added.
-- **Backend `.gitignore`** excludes `.env`, `.venv`, caches, logs.
-- **Frontend `.gitignore`** excludes `.env`, `node_modules`, `build`.
-
----
-
-## Summary
-
-- Backend provides API, WebSocket, and static file serving.
-- Frontend runs independently during development.
-- Production mode: backend serves frontend build.
-- Environment files stay local and are not committed.
+- Parent `.gitignore` ignores global junk.
+- Backend `.gitignore` excludes `.env`, `.venv`, caches.
+- Frontend `.gitignore` excludes `.env*`, `node_modules`, `.next`.
